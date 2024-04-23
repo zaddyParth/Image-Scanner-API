@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IMAGE PROCESSING APP</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #f0f0f0;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      form {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #imagePreview {
+        max-width: 100%;
+        height: auto;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      span {
+        color: #f72b08;
+        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        font-size: 15px;
+        animation: both;
+        position: absolute;
+        font-weight: 600;
+      }
+
+      button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background-color 0.3s ease;
+        margin-left: 25px;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container fade-in">
+      <h1 style="text-align: center">Image Processing App</h1>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input
+          type="file"
+          name="image"
+          id="imageInput"
+          accept="image/"
+          onchange="PreviewImage();"
+          required
+        />
+        <button type="submit">Upload Image</button>
+      </form>
+      <!-- Error -->
+      <span class="error" id="fileTypeError"></span>
+      <div id="imagePreview" style="text-align: center"></div>
+      <div id="imageInfo" style="text-align: center"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+          const file = document.getElementById("imageInput").files[0];
+          if (!file || !allowedTypes.includes(file.type)) {
+            document.getElementById("fileTypeError").textContent =
+              "Please select a valid PNG, JPG or JPEG image file.";
+            return setTimeout (() => {
+                document.getElementById("fileTypeError").textContent = '';
+            },2000);
+          }
+
+          const formData = new FormData();
+          formData.append("image", file);
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/process-image",
+              {
+                method: "POST",
+                body: formData,
+              }
+            )
+
+            if (!response.ok) {
+              throw new Error("Error in processing image");
+            }
+
+            const data = await response.json();
+
+            const imagePreview = document.getElementById("imagePreview");
+            const imageSrc = URL.createObjectURL(
+              document.getElementById("imageInput").files[0]
+            );
+            imagePreview.innerHTML = `<img src="${imageSrc} alt="Uploaded Image">`;
+
+            //Displaying information on image on front-end.
+            document.getElementById("imageInfo").innerHTML = `
+            <p><b>Image Size</b>: ${data.size}</p>
+            <p><b>Image Width</b>: ${data.dimensions.width}</p>
+            <p><b>Image Height</b>: ${data.dimensions.height}</p>
+            <p><b>Format</b>: ${data.imageFormat}</p>
+            `;
+
+            setTimeout(() => {
+                document.getElementById("imageInfo").innerHTML = ``;
+                imagePreview.innerHTML = ``;
+            },5000);
+
+          } catch (error) {
+            console.error("Error: ", error);
+          }
+        });
+    </script>
+  </body>
+</html>
